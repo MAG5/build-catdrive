@@ -54,14 +54,14 @@ $(DL)/$(ALPINE_PKG):
 alpine_clean:
 
 $(RESCUE_ROOTFS):
-	@[ ! -f $(RESCUE_ROOTFS) ] && make rescue
+	# @[ ! -f $(RESCUE_ROOTFS) ] && make rescue
 
 rescue: alpine_dl
 	sudo BUILD_RESCUE=y ./build-alpine.sh release $(DL)/$(ALPINE_PKG) $(DL_KERNEL) -
 
 ifeq ($(build_alpine),y)
 alpine: alpine_dl $(RESCUE_ROOTFS)
-	sudo ./build-alpine.sh release $(DL)/$(ALPINE_PKG) $(DL_KERNEL) $(RESCUE_ROOTFS)
+	sudo ./build-alpine.sh generate $(DL)/$(ALPINE_PKG) $(DL_KERNEL) $(RESCUE_ROOTFS)
 
 else
 alpine:
