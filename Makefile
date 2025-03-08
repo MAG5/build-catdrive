@@ -1,5 +1,5 @@
-KERNEL_BSP := https://github.com/hanwckf/linux-marvell/releases/download
-RELEASE_TAG = v2019-9-16-1
+KERNEL_BSP := https://github.com/yjxch/build_catdrive_kernel_5.4/releases/download
+RELEASE_TAG = kernel_catdrive
 DTB := armada-3720-catdrive.dtb
 
 DTB_URL := $(KERNEL_BSP)/$(RELEASE_TAG)/$(DTB)
@@ -35,8 +35,8 @@ $(DL_KERNEL)/Image:
 $(DL_KERNEL)/modules.tar.xz:
 	$(call download,$(DL_KERNEL),$(KMOD_URL))
 
-ALPINE_BRANCH := v3.10
-ALPINE_VERSION := 3.10.4
+ALPINE_BRANCH := v3.12
+ALPINE_VERSION := 3.12.12
 ALPINE_PKG := alpine-minirootfs-$(ALPINE_VERSION)-aarch64.tar.gz
 RESCUE_ROOTFS := tools/rescue/rescue-alpine-catdrive-$(ALPINE_VERSION)-aarch64.tar.xz
 
