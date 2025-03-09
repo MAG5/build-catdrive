@@ -6,7 +6,7 @@ DTB_URL := $(KERNEL_BSP)/$(RELEASE_TAG)/$(DTB)
 KERNEL_URL := $(KERNEL_BSP)/$(RELEASE_TAG)/Image
 KMOD_URL := $(KERNEL_BSP)/$(RELEASE_TAG)/modules.tar.xz
 
-TARGETS := debian archlinux alpine ubuntu
+TARGETS := alpine
 
 DL := dl
 DL_KERNEL := $(DL)/kernel/$(RELEASE_TAG)
@@ -40,11 +40,7 @@ ALPINE_VERSION := 3.10.4
 ALPINE_PKG := alpine-minirootfs-$(ALPINE_VERSION)-aarch64.tar.gz
 RESCUE_ROOTFS := tools/rescue/rescue-alpine-catdrive-$(ALPINE_VERSION)-aarch64.tar.xz
 
-ifneq ($(TRAVIS),)
 ALPINE_URL_BASE := http://dl-cdn.alpinelinux.org/alpine/$(ALPINE_BRANCH)/releases/aarch64
-else
-ALPINE_URL_BASE := https://mirrors.huaweicloud.com/alpine/$(ALPINE_BRANCH)/releases/aarch64
-endif
 
 alpine_dl: dl_kernel $(DL)/$(ALPINE_PKG)
 
@@ -66,55 +62,3 @@ alpine: alpine_dl $(RESCUE_ROOTFS)
 else
 alpine:
 endif
-
-ARCHLINUX_PKG := ArchLinuxARM-aarch64-latest.tar.gz
-ifneq ($(TRAVIS),)
-ARCHLINUX_URL_BASE := http://os.archlinuxarm.org/os
-else
-ARCHLINUX_URL_BASE := https://mirrors.163.com/archlinuxarm/os
-endif
-
-archlinux_dl: dl_kernel $(DL)/$(ARCHLINUX_PKG)
-
-$(DL)/$(ARCHLINUX_PKG):
-	$(call download,$(DL),$(ARCHLINUX_URL_BASE)/$(ARCHLINUX_PKG))
-
-archlinux_clean:
-	rm -f $(DL)/$(ARCHLINUX_PKG)
-
-ifeq ($(build_archlinux),y)
-archlinux: archlinux_dl $(RESCUE_ROOTFS)
-	sudo ./build-archlinux.sh release $(DL)/$(ARCHLINUX_PKG) $(DL_KERNEL) $(RESCUE_ROOTFS)
-else
-archlinux:
-endif
-
-UBUNTU_PKG := ubuntu-base-18.04.4-base-arm64.tar.gz
-ifneq ($(TRAVIS),)
-UBUNTU_URL_BASE := http://cdimage.ubuntu.com/ubuntu-base/releases/bionic/release
-else
-UBUNTU_URL_BASE := https://mirrors.huaweicloud.com/ubuntu-cdimage/ubuntu-base/releases/bionic/release
-endif
-
-ubuntu_dl: dl_kernel $(DL)/$(UBUNTU_PKG)
-
-$(DL)/$(UBUNTU_PKG):
-	$(call download,$(DL),$(UBUNTU_URL_BASE)/$(UBUNTU_PKG))
-
-ubuntu_clean:
-
-ifeq ($(build_ubuntu),y)
-ubuntu: ubuntu_dl $(RESCUE_ROOTFS)
-	sudo ./build-ubuntu.sh release $(DL)/$(UBUNTU_PKG) $(DL_KERNEL) $(RESCUE_ROOTFS)
-else
-ubuntu:
-endif
-
-ifeq ($(build_debian),y)
-debian: dl_kernel $(RESCUE_ROOTFS)
-	sudo ./build-debian.sh release - $(DL_KERNEL) $(RESCUE_ROOTFS)
-
-else
-debian:
-endif
-debian_clean:
