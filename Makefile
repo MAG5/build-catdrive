@@ -1,5 +1,5 @@
-KERNEL_BSP := https://github.com/yjxch/build_catdrive_kernel_5.4/releases/download
-RELEASE_TAG = kernel_catdrive
+KERNEL_BSP := https://github.com/hanwckf/linux-marvell/releases/download
+RELEASE_TAG = v2019-9-16-1
 DTB := armada-3720-catdrive.dtb
 
 DTB_URL := $(KERNEL_BSP)/$(RELEASE_TAG)/$(DTB)
