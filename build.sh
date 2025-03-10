@@ -6,7 +6,7 @@ set -e
 set -o pipefail
 
 os="alpine"
-rootsize=700
+rootsize=1000
 origin="minirootfs"
 target="catdrive"
 
@@ -18,35 +18,13 @@ qemu_static="./tools/qemu/qemu-aarch64-static"
 cur_dir=$(pwd)
 DTB=armada-3720-catdrive.dtb
 
-chroot_prepare() {
-	if [ -z "$TRAVIS" ]; then
-		sed -i 's#http://dl-cdn.alpinelinux.org#https://mirrors.huaweicloud.com#' $rootfs_mount_point/etc/apk/repositories
-		echo "nameserver 119.29.29.29" > $rootfs_mount_point/etc/resolv.conf
-	else
-		echo "nameserver 8.8.8.8" > $rootfs_mount_point/etc/resolv.conf
-	fi
-}
-
-ext_init_param() {
-	if [ "$BUILD_RESCUE" = "y" ]; then
-		echo "BUILD_RESCUE=y"
-	fi
-}
-
-chroot_post() {
-	if [ -n "$TRAVIS" ]; then
-		sed -i 's#http://dl-cdn.alpinelinux.org#https://mirrors.huaweicloud.com#' $rootfs_mount_point/etc/apk/repositories
-	fi
-}
 
 add_services() {
-	if [ "$BUILD_RESCUE" != "y" ]; then
 		echo "add resize mmc script"
 		cp ./tools/${os}/resizemmc.sh $rootfs_mount_point/sbin/resizemmc.sh
 		cp ./tools/${os}/resizemmc $rootfs_mount_point/etc/init.d/resizemmc
 		ln -sf /etc/init.d/resizemmc $rootfs_mount_point/etc/runlevels/default/resizemmc
 		touch $rootfs_mount_point/root/.need_resize
-	fi
 }
 
 gen_new_name() {
@@ -69,7 +47,7 @@ func_generate() {
 	echo "create mbr rootfs, size: ${rootsize}M"
 	dd if=/dev/zero bs=1M status=none conv=fsync count=$rootsize of=$tmpdir/$DISK
 	parted -s $tmpdir/$DISK -- mktable msdos
-	parted -s $tmpdir/$DISK -- mkpart p ext4 8192s -1s
+	parted -s $tmpdir/$DISK -- mkpart p ext4 4MB 100%
 
 	# get PTUUID
 	eval `blkid -o export -s PTUUID $tmpdir/$DISK`
@@ -114,11 +92,11 @@ func_generate() {
 	cp ./tools/${os}/init.sh $rootfs_mount_point/init.sh
 
 	# prepare for chroot
-	chroot_prepare
+	echo "nameserver 8.8.8.8" > $rootfs_mount_point/etc/resolv.conf
 
 	# chroot
 	echo "chroot to ${os} rootfs"
-	eval $(ext_init_param) LANG=C LC_ALL=C chroot $rootfs_mount_point /init.sh
+	LANG=C LC_ALL=C chroot $rootfs_mount_point /init.sh
 
 	# clean rootfs
 	rm -f $rootfs_mount_point/init.sh
@@ -133,18 +111,14 @@ func_generate() {
 	cp -f $kdir/Image $rootfs_mount_point/boot
 	cp -f $kdir/$DTB $rootfs_mount_point/boot
 	cp -f ./tools/boot/uEnv.txt $rootfs_mount_point/boot
-	if [ "$BUILD_RESCUE" != "y" ]; then
-		echo "rootdev=PARTUUID=${PTUUID}-01" >> $rootfs_mount_point/boot/uEnv.txt
-	fi
+	echo "rootdev=PARTUUID=${PTUUID}-01" >> $rootfs_mount_point/boot/uEnv.txt
+
 	cp -f ./tools/boot/boot.cmd $rootfs_mount_point/boot
 	mkimage -C none -A arm -T script -d $rootfs_mount_point/boot/boot.cmd $rootfs_mount_point/boot/boot.scr
 
 	# add /lib/modules
 	echo "add /lib/modules"
 	tar --no-same-owner -xf $kdir/modules.tar.xz --strip-components 1 -C $rootfs_mount_point/lib
-
-	# chroot post
-	chroot_post
 
 	umount -l $rootfs_mount_point
 	losetup -d $lodev
